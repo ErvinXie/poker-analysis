@@ -1,0 +1,85 @@
+{
+  "app": {
+    "title": "Poker玩家映射管理器",
+    "version": "1.0"
+  },
+  "tabs": {
+    "log_files": "日志文件",
+    "mappings": "映射管理",
+    "batch_ops": "批量操作"
+  },
+  "log_files": {
+    "header": "日志文件状态",
+    "columns": {
+      "filename": "文件名",
+      "status": "状态",
+      "players": "玩家数",
+      "mapping_file": "映射文件"
+    },
+    "status": {
+      "mapped": "✅ 已映射",
+      "not_mapped": "⚠️ 未映射",
+      "error": "错误"
+    },
+    "buttons": {
+      "refresh": "刷新",
+      "create_mapping": "创建映射",
+      "edit_mapping": "编辑映射",
+      "view_details": "查看详情"
+    }
+  },
+  "mappings": {
+    "header": "现有映射",
+    "no_directory": "未找到映射目录。",
+    "no_files": "未找到映射文件。",
+    "found_files": "找到 {count} 个映射文件：",
+    "players_count": "玩家数量: {count}",
+    "file_path": "文件路径: {path}",
+    "more_mappings": "... 还有 {count} 个映射",
+    "read_error": "读取文件出错: {error}"
+  },
+  "batch_ops": {
+    "header": "批量操作",
+    "frame_title": "可用操作",
+    "create_all": {
+      "button": "创建所有缺失映射",
+      "description": "为所有尚未创建映射的日志文件创建玩家映射"
+    },
+    "parse_all": {
+      "button": "批量解析所有日志",
+      "description": "处理所有已有映射的日志文件"
+    },
+    "status_title": "状态",
+    "starting": "开始批量创建映射...",
+    "confirm_title": "确认",
+    "confirm_message": "这将为所有尚未创建映射的日志文件创建玩家映射。系统会为每个文件弹出映射设置窗口。是否继续？",
+    "complete": "批量创建映射完成！",
+    "not_implemented": "批量解析功能尚未在GUI中实现。",
+    "use_command": "请使用命令行: python3 batch_process.py"
+  },
+  "dialogs": {
+    "warning": "警告",
+    "error": "错误",
+    "success": "成功", 
+    "cancelled": "已取消",
+    "confirm": "确认",
+    "select_file_first": "请先选择一个日志文件。",
+    "no_mapping_exists": "此日志文件没有对应的映射。",
+    "mapping_created": "映射创建成功！",
+    "mapping_cancelled": "映射创建已取消。",
+    "read_mapping_failed": "读取映射文件失败: {error}"
+  },
+  "details": {
+    "window_title": "映射详情 - {name}",
+    "header": "{name} 的玩家映射",
+    "total_mappings": "总映射数量: {count}"
+  },
+  "common": {
+    "close": "关闭",
+    "ok": "确定",
+    "cancel": "取消", 
+    "yes": "是",
+    "no": "否",
+    "na": "N/A"
+  }
+}
