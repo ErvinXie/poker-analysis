@@ -14,10 +14,15 @@ poker-analysis/
 ├── outputs/                                 # 解析结果输出
 │   └── poker_now_log_pgl3Rc9zEebTOvy_wTLZXDzsf/
 │       ├── parsed_hands.json              # 详细手牌数据
+│       ├── enhanced_hands.json            # 增强手牌数据（含标签和行动线）
 │       ├── game_statistics.json           # 游戏统计数据
 │       └── game_summary.txt               # 可读性报告
 └── 脚本文件/
     ├── poker_parser.py                     # 主解析器
+    ├── action_analyzer.py                  # 行动分析器（标签+行动线）
+    ├── action_frequency_analyzer.py        # 行动频率分析器
+    ├── action_line_analyzer.py             # 行动线频率分析器
+    ├── range_analyzer.py                   # 玩家范围分析器
     ├── batch_process.py                    # 批量处理脚本
     ├── manage_mappings.py                  # 映射管理工具
     └── demo_mapping.py                     # 演示脚本
@@ -69,7 +74,43 @@ python3 batch_process.py
 - 支持跳过（Enter）和退出（quit）操作
 - 并行生成所有输出
 
-### 3. 映射管理
+### 3. 行动分析与标签
+```bash
+python3 action_analyzer.py
+```
+- **智能行动标签**: 自动为每个行动添加poker术语标签
+  - `open` - 首次加注开池
+  - `3bet`/`4bet`/`5bet` - 三次/四次/五次下注
+  - `cbet` - 持续下注（preflop aggressor在flop下注）
+  - `donk` - 抢攻下注（非preflop aggressor率先下注）
+  - `check-raise` - 过牌加注
+  - `limp` - 跛入（平跟大盲注）
+- **行动线生成**: 为每个玩家生成简洁的行动线
+  - `X`=Check, `B`=Bet, `C`=Call, `F`=Fold, `R`=Raise, `A`=All-in
+  - 格式: `preflop/flop/turn/river`
+  - 示例: `R/B/X/R` = 翻牌前raise，flop下bet，turn过check，river加raise
+- **分析总结**: 识别preflop/postflop aggressor，统计各类行动
+
+### 4. 行动频率分析
+```bash  
+python3 action_frequency_analyzer.py
+```
+- **标签化行动统计**: 基于enhanced_hands.json分析每个玩家的标签行动频率
+- **按玩家数量分组**: 分别统计2人桌、3人桌...8人桌的行动频率
+- **全面频率表格**: 每个行动标签生成独立的频率矩阵
+  - 行: 玩家名称
+  - 列: 桌子玩家数量(2人、3人、4人...)
+  - 值: 频率(行动次数/总手数)
+- **多维度分析**:
+  - `open`: 首次加注开池频率
+  - `3bet`/`4bet`: 多轮下注频率
+  - `cbet`: 持续下注频率
+  - `donk`: 抢攻下注频率
+  - `limp`: 跛入频率
+  - `check-raise`: 过牌加注频率
+- **CSV导出**: 支持导出所有表格为CSV文件便于进一步分析
+
+### 5. 映射管理
 
 #### GUI界面（推荐）
 ```bash
@@ -127,6 +168,38 @@ python3 manage_mappings.py check
       "hole_cards": ["7♠", "10♥"]
     }
   ]
+}
+```
+
+### enhanced_hands.json
+增强版手牌数据，包含原始数据plus：
+```json
+{
+  "hand_id": "8v46qz5acokg",
+  "hand_number": 221,
+  "preflop_actions": [
+    {
+      "player": "小刚",
+      "action": "raise",
+      "amount": 175,
+      "tags": [
+        {
+          "tag": "open",
+          "description": "首次加注开池",
+          "confidence": 1.0
+        }
+      ]
+    }
+  ],
+  "action_lines": {
+    "小刚": "R/B/X/R",
+    "李四": "C/XF"
+  },
+  "analysis": {
+    "preflop_aggressor": "小刚",
+    "postflop_aggressor": "小刚",
+    "stages_played": ["preflop", "flop", "turn", "river"]
+  }
 }
 ```
 

@@ -1,7 +1,9 @@
 # Ignore output directories
 outputs/
 logs/
-
+frequency_analysis/
+range_analysis
+action_line_analysis/
 
 # Python cache files
 __pycache__/

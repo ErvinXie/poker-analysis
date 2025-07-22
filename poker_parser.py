@@ -177,6 +177,12 @@ class PokerHand:
     turn_card: str = None
     river_card: str = None
     
+    # Run it twice - second run cards
+    flop_cards_second: List[str] = None
+    turn_card_second: str = None
+    river_card_second: str = None
+    run_it_twice: bool = False
+    
     # Showdown information
     showdown: List[ShowdownInfo] = None
     
@@ -197,6 +203,13 @@ class PokerHand:
             self.river_actions = []
         if self.showdown is None:
             self.showdown = []
+        # Initialize run it twice fields
+        if self.flop_cards_second is None:
+            self.flop_cards_second = []
+        if self.turn_card_second is None:
+            self.turn_card_second = None
+        if self.river_card_second is None:
+            self.river_card_second = None
     
     @property
     def all_actions(self) -> List[PlayerAction]:
@@ -344,7 +357,11 @@ class PokerLogParser:
                     dealer=dealer,
                     players=[],
                     player_stacks={},
-                    timestamp=timestamp
+                    timestamp=timestamp,
+                    flop_cards_second=None,
+                    turn_card_second=None,
+                    river_card_second=None,
+                    run_it_twice=False
                 )
                 self.current_stage = "preflop"
         
@@ -362,22 +379,39 @@ class PokerLogParser:
                 self.current_hand.players = list(stacks.keys())
         
         # Community cards - Flop
-        elif "Flop:" in entry:
+        elif entry.startswith("Flop"):
             if self.current_hand:
                 self.current_stage = "flop"
-                self.current_hand.flop_cards = self.parse_flop_cards(entry)
+                if "(second run)" in entry:
+                    self.current_hand.flop_cards_second = self.parse_flop_cards(entry)
+                    self.current_hand.run_it_twice = True
+                else:
+                    self.current_hand.flop_cards = self.parse_flop_cards(entry)
         
         # Turn
-        elif "Turn:" in entry:
+        elif entry.startswith("Turn"):
             if self.current_hand:
                 self.current_stage = "turn"
-                self.current_hand.turn_card = self.parse_turn_river_card(entry)
+                if "(second run)" in entry:
+                    self.current_hand.turn_card_second = self.parse_turn_river_card(entry)
+                    self.current_hand.run_it_twice = True
+                else:
+                    self.current_hand.turn_card = self.parse_turn_river_card(entry)
         
         # River
-        elif "River:" in entry:
+        elif entry.startswith("River"):
             if self.current_hand:
                 self.current_stage = "river"
-                self.current_hand.river_card = self.parse_turn_river_card(entry)
+                if "(second run)" in entry:
+                    self.current_hand.river_card_second = self.parse_turn_river_card(entry)
+                    self.current_hand.run_it_twice = True
+                else:
+                    self.current_hand.river_card = self.parse_turn_river_card(entry)
+        
+        # Run it twice decision messages
+        elif "run it twice" in entry:
+            if self.current_hand and ("All players" in entry or "choose to" in entry):
+                self.current_hand.run_it_twice = True
         
         # Showdown - player shows cards
         elif " shows a " in entry:
@@ -508,6 +542,12 @@ class PokerLogParser:
                 'turn_card': hand.turn_card,
                 'river_card': hand.river_card,
                 'community_cards': hand.community_cards,  # All cards combined
+                
+                # Run it twice cards
+                'run_it_twice': hand.run_it_twice,
+                'flop_cards_second': hand.flop_cards_second,
+                'turn_card_second': hand.turn_card_second, 
+                'river_card_second': hand.river_card_second,
                 
                 # Actions by stage
                 'preflop_actions': actions_to_dict(hand.preflop_actions),
