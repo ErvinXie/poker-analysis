@@ -301,14 +301,23 @@ class PokerLogParser:
     
     def parse_log_file(self, file_path: str):
         """Parse the poker log CSV file"""
+        # First read all rows and sort by order (ascending to get chronological order)
+        rows = []
         with open(file_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            
             for row in reader:
-                entry = row['entry']
-                timestamp = row['at']
-                
-                self.process_entry(entry, timestamp)
+                rows.append(row)
+        
+        # Sort by order column in ascending order to get chronological sequence
+        # The log file is in reverse chronological order, so we need to reverse it
+        rows.sort(key=lambda x: int(x['order']) if x['order'].isdigit() else 0)
+        
+        # Now process entries in chronological order
+        for row in rows:
+            entry = row['entry']
+            timestamp = row['at']
+            
+            self.process_entry(entry, timestamp)
         
         # Finalize the last hand if exists
         if self.current_hand:
@@ -383,12 +392,16 @@ class PokerLogParser:
         # Player actions
         elif self.current_hand:
             action_patterns = [
-                (r'"([^"]+)" folds', 'fold'),
-                (r'"([^"]+)" calls (\d+)', 'call'),
-                (r'"([^"]+)" bets (\d+)', 'bet'),
+                # More specific patterns first to avoid incorrect matching  
+                (r'"([^"]+)" posts a small blind of (\d+)', 'blind'),
+                (r'"([^"]+)" posts a big blind of (\d+)', 'blind'),
                 (r'"([^"]+)" raises to (\d+)', 'raise'),
+                (r'"([^"]+)" raises by (\d+)', 'raise'),
+                (r'"([^"]+)" bets (\d+)', 'bet'),
+                (r'"([^"]+)" calls (\d+)', 'call'),
+                (r'"([^"]+)" goes all-in with (\d+)', 'all-in'),
+                (r'"([^"]+)" folds', 'fold'),
                 (r'"([^"]+)" checks', 'check'),
-                (r'"([^"]+)" posts a (?:small|big) blind of (\d+)', 'blind'),
                 (r'"([^"]+)" collected (\d+) from pot', 'win'),
                 (r'Uncalled bet of (\d+) returned to "([^"]+)"', 'return')
             ]
@@ -458,7 +471,7 @@ class PokerLogParser:
             for action in hand.all_actions:
                 player = action.player
                 if player not in stats['player_actions']:
-                    stats['player_actions'][player] = {'fold': 0, 'call': 0, 'bet': 0, 'raise': 0, 'check': 0}
+                    stats['player_actions'][player] = {'fold': 0, 'call': 0, 'bet': 0, 'raise': 0, 'check': 0, 'all-in': 0, 'blind': 0}
                 if action.action in stats['player_actions'][player]:
                     stats['player_actions'][player][action.action] += 1
         
@@ -578,26 +591,35 @@ def main():
     parser_temp = PokerLogParser(log_file)
     
     print("收集玩家名单...")
+    # Read and sort rows by order (chronological)
+    rows = []
     with open(log_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            entry = row['entry']
-            # Extract player names from various patterns
-            patterns = [
-                r'"([^"]+)" folds',
-                r'"([^"]+)" calls',
-                r'"([^"]+)" bets',
-                r'"([^"]+)" raises',
-                r'"([^"]+)" checks',
-                r'"([^"]+)" posts',
-                r'"([^"]+)" collected',
-                r'dealer: "([^"]+)"',
-                r'Player stacks:.*?"([^"]+)"'
-            ]
-            for pattern in patterns:
-                matches = re.findall(pattern, entry)
-                for match in matches:
-                    parser_temp.all_players.add(match)
+            rows.append(row)
+    
+    # Sort by order to get chronological sequence
+    rows.sort(key=lambda x: int(x['order']) if x['order'].isdigit() else 0)
+    
+    # Extract player names from entries in chronological order
+    for row in rows:
+        entry = row['entry']
+        # Extract player names from various patterns
+        patterns = [
+            r'"([^"]+)" folds',
+            r'"([^"]+)" calls',
+            r'"([^"]+)" bets',
+            r'"([^"]+)" raises',
+            r'"([^"]+)" checks',
+            r'"([^"]+)" posts',
+            r'"([^"]+)" collected',
+            r'dealer: "([^"]+)"',
+            r'Player stacks:.*?"([^"]+)"'
+        ]
+        for pattern in patterns:
+            matches = re.findall(pattern, entry)
+            for match in matches:
+                parser_temp.all_players.add(match)
     
     # Show mapping dialog
     print(f"发现 {len(parser_temp.all_players)} 个玩家")
